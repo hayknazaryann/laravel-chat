@@ -29,5 +29,7 @@ Broadcast::channel('message.sent.{chatId}', function ($user,$chatId) {
 });
 
 Broadcast::channel('user.activity', function ($user) {
-
+    if (Auth::check()){
+        return $user;
+    }
 });

@@ -5305,6 +5305,13 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   name: "Chat",
   props: ["auth"],
@@ -5317,50 +5324,50 @@ __webpack_require__.r(__webpack_exports__);
       receiver: null,
       newMessage: null,
       messages: [],
-      isActive: false
+      isActive: null
     };
   },
   created: function created() {
-    this.getUsers();
-  },
-  mounted: function mounted() {
-    window.Echo.channel("user.activity").listen('UsersActivity', function (e) {
-      var user_row = document.getElementById('user-' + e.user_id);
+    var _this = this;
 
-      if (user_row) {
-        var status_row = user_row.getElementsByClassName('status')[0];
-        status_row.lastChild.textContent = "Online";
-        user_row.getElementsByTagName('i')[0].classList.remove('offline');
-        user_row.getElementsByTagName('i')[0].classList.add('online');
-      }
+    this.getUsers();
+    window.Echo.join("user.activity").here(function (onlineUsers) {
+      _this.onlineUsers = onlineUsers;
+    }).joining(function (onlineUser) {
+      _this.onlineUsers.push(onlineUser);
+    }).leaving(function (onlineUser) {
+      _this.onlineUsers.splice(_this.onlineUsers.findIndex(function (e) {
+        return e.id === onlineUser.id;
+      }), 1);
     });
   },
+  mounted: function mounted() {},
   methods: {
     getUsers: function getUsers() {
-      var _this = this;
+      var _this2 = this;
 
       axios.get('/get/users', {}, {}).then(function (response) {
-        _this.users = response.data.users;
+        _this2.users = response.data.users;
       })["catch"](function (error) {});
     },
     openChat: function openChat(user_id) {
-      var _this2 = this;
+      var _this3 = this;
 
       var data = {
         'receiver_id': user_id
       };
       axios.post('/open/chat', data, {}).then(function (response) {
-        _this2.chat = response.data.chat;
-        _this2.chat_id = _this2.chat.id;
-        _this2.messages = response.data.messages;
-        _this2.receiver = response.data.receiver;
+        _this3.chat = response.data.chat;
+        _this3.chat_id = _this3.chat.id;
+        _this3.messages = response.data.messages;
+        _this3.receiver = response.data.receiver;
 
-        _this2.messageSent();
+        _this3.messageSentEvent();
       })["catch"](function (error) {});
-      this.isActive = true;
+      this.isActive = user_id;
     },
     sendMessage: function sendMessage() {
-      var _this3 = this;
+      var _this4 = this;
 
       if (this.newMessage.trim() == '') {
         return false;
@@ -5371,36 +5378,15 @@ __webpack_require__.r(__webpack_exports__);
       data.append('receiver_id', this.receiver.id);
       data.append('chat_id', this.chat.id);
       axios.post('/send/message', data, {}).then(function (response) {
-        _this3.messages.push(response.data.message);
+        _this4.messages.push(response.data.message);
       })["catch"](function (error) {});
       this.newMessage = '';
     },
-    messageSent: function messageSent() {
-      var _this4 = this;
-
-      window.Echo["private"]("message.sent." + this.chat.id).listen('MessageSent', function (e) {
-        _this4.messages.push(e.message);
-      });
-    },
-    listen: function listen() {
+    messageSentEvent: function messageSentEvent() {
       var _this5 = this;
 
-      window.Echo.join("private.chat").here(function (users) {
-        _this5.friends.forEach(function (friend) {
-          users.forEach(function (user) {
-            if (user.id == friend.id) {
-              friend.online = true;
-            }
-          });
-        });
-      }).joining(function (user) {
-        _this5.friends.forEach(function (friend) {
-          return user.id == friend.id ? friend.online = true : "";
-        });
-      }).leaving(function (user) {
-        _this5.friends.forEach(function (friend) {
-          return user.id == friend.id ? friend.online = false : "";
-        });
+      window.Echo["private"]("message.sent.".concat(this.chat.id)).listen('MessageSent', function (e) {
+        _this5.messages.push(e.message);
       });
     }
   }
@@ -10531,7 +10517,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "\n.message-area[data-v-0d66c37a] {\n    height: 400px;\n    max-height: 400px;\n    overflow-y: scroll;\n    padding: 15px;\n    border-bottom: 1px solid #eee;\n}\n.user[data-v-0d66c37a] {\n    font-weight: 800;\n}\n.message[data-v-0d66c37a] {\n    margin-bottom: 0;\n    white-space: pre-wrap;\n    background: #f6f9fb;\n    border-radius: 0.6rem;\n    padding: 1rem 1.25rem;\n    color: #95aac9;\n}\n.message-out .message[data-v-0d66c37a] {\n    background: #2787f5;\n    border-radius: 0.6rem;\n    color: #fff;\n}\n.text-right[data-v-0d66c37a] {\n    text-align: right;\n}\n.self[data-v-0d66c37a] {\n    background-color: #f0f0f0;\n    padding: 10px;\n}\n", ""]);
+___CSS_LOADER_EXPORT___.push([module.id, "\n.message-area[data-v-0d66c37a] {\n    height: 400px;\n    max-height: 400px;\n    overflow-y: scroll;\n    padding: 15px;\n    border-bottom: 1px solid #eee;\n}\n.message[data-v-0d66c37a] {\n    margin-bottom: 0;\n    white-space: pre-wrap;\n    background: #f6f9fb;\n    border-radius: 0.6rem;\n    padding: 1rem 1.25rem;\n    color: #95aac9;\n}\n.message-out .message[data-v-0d66c37a] {\n    background: #2787f5;\n    border-radius: 0.6rem;\n    color: #fff;\n}\n\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -34861,7 +34847,7 @@ var render = function () {
               "li",
               {
                 staticClass: "clearfix",
-                class: { active: _vm.isActive },
+                class: { active: user.id === _vm.isActive },
                 attrs: { id: "user-" + user.id },
                 on: {
                   click: function ($event) {
@@ -34875,7 +34861,27 @@ var render = function () {
                     _vm._v(_vm._s(user.name)),
                   ]),
                   _vm._v(" "),
-                  _vm._m(0, true),
+                  _c("div", { staticClass: "status" }, [
+                    _c("i", {
+                      staticClass: "fa fa-circle",
+                      class: _vm.onlineUsers.find(function (onlineUser) {
+                        return onlineUser.id === user.id
+                      })
+                        ? "online"
+                        : "offline",
+                    }),
+                    _vm._v(
+                      "\n                            " +
+                        _vm._s(
+                          _vm.onlineUsers.find(function (onlineUser) {
+                            return onlineUser.id === user.id
+                          })
+                            ? "Online"
+                            : "Offline"
+                        ) +
+                        "\n                        "
+                    ),
+                  ]),
                 ]),
               ]
             )
@@ -34887,7 +34893,17 @@ var render = function () {
     _vm._v(" "),
     _c("div", { staticClass: "col-md-9" }, [
       this.receiver
-        ? _c("div", { staticClass: "user-chat row" }, [
+        ? _c("div", { staticClass: "row  receiver-name" }, [
+            _c("div", { staticClass: "col-md-12" }, [
+              _c("h5", { staticClass: "m-auto" }, [
+                _vm._v(_vm._s(this.receiver.name)),
+              ]),
+            ]),
+          ])
+        : _vm._e(),
+      _vm._v(" "),
+      this.receiver
+        ? _c("div", { staticClass: "user-chat row justify-content-center" }, [
             _c(
               "div",
               { ref: "message", staticClass: "message-area col-md-12" },
@@ -34897,7 +34913,7 @@ var render = function () {
                   {
                     key: message.id,
                     class: {
-                      row: true,
+                      "row mt-2": true,
                       "message-out text-right justify-content-end":
                         message.sender_id === _vm.auth.id,
                       "message-in": !(message.sender_id === _vm.auth.id),
@@ -34905,10 +34921,6 @@ var render = function () {
                   },
                   [
                     _c("div", { staticClass: "col-md-6" }, [
-                      _c("p", { staticClass: "user" }, [
-                        _vm._v(_vm._s(message.sender.name)),
-                      ]),
-                      _vm._v(" "),
                       _c("div", { staticClass: "message" }, [
                         _vm._v(_vm._s(message.message)),
                       ]),
@@ -34919,7 +34931,7 @@ var render = function () {
               0
             ),
             _vm._v(" "),
-            _c("div", { staticClass: "col-md-10" }, [
+            _c("div", { staticClass: "col-md-8" }, [
               _c("input", {
                 directives: [
                   {
@@ -34958,17 +34970,7 @@ var render = function () {
     ]),
   ])
 }
-var staticRenderFns = [
-  function () {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "status" }, [
-      _c("i", { staticClass: "fa fa-circle offline" }),
-      _vm._v(" Offline "),
-    ])
-  },
-]
+var staticRenderFns = []
 render._withStripped = true
 
 

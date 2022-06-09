@@ -39,6 +39,6 @@ class RemoveOldMessages extends Command
      */
     public function handle()
     {
-        Message::where(['created_at', '<=', Carbon::now()->subDays(1)])->delete();
+        Message::where('created_at', '<=', Carbon::today()->format('Y-m-d H:i'))->delete();
     }
 }

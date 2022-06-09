@@ -21,10 +21,9 @@ class UserActivity
     public function handle(Request $request, Closure $next)
     {
         if (auth()->check()) {
-            $expiresAt = Carbon::now()->addMinutes(5);
+            $expiresAt = Carbon::now()->addMinutes(config('session.lifetime'));
             Cache::put('user-online-' . \auth()->id(), true, $expiresAt);
             User::where('id', \auth()->id())->update(['last_seen' => (new \DateTime())->format("Y-m-d H:i:s")]);
-            broadcast(new UsersActivity(auth()->id(),true))->toOthers();
         }
         return $next($request);
     }

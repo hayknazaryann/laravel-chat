@@ -4,10 +4,13 @@
         <div class="col-md-3">
             <div class="users-list">
                 <ul class="list-unstyled chat-list mt-2 mb-0">
-                    <li class="clearfix" :class="{'active' : isActive}" v-for="user in users" :id="'user-'+user.id" @click="openChat(user.id)">
+                    <li class="clearfix"  :class="{'active' : (user.id === isActive)}" v-for="user in users" :id="'user-'+user.id" @click="openChat(user.id)">
                         <div class="about">
                             <div class="name">{{user.name}}</div>
-                            <div class="status"> <i class="fa fa-circle offline"></i> Offline </div>
+                            <div class="status">
+                                <i class="fa fa-circle" v-bind:class="(onlineUsers.find(onlineUser => onlineUser.id===user.id)) ? 'online' : 'offline'"></i>
+                                {{(onlineUsers.find(onlineUser => onlineUser.id===user.id)) ? 'Online' : 'Offline'}}
+                            </div>
                         </div>
                     </li>
                 </ul>
@@ -15,16 +18,21 @@
         </div>
 
         <div class="col-md-9">
-            <div class="user-chat row" v-if="this.receiver">
+            <div class="row  receiver-name" v-if="this.receiver">
+                <div class="col-md-12">
+                    <h5 class="m-auto">{{this.receiver.name}}</h5>
+                </div>
+            </div>
+            <div class="user-chat row justify-content-center" v-if="this.receiver">
                 <div class="message-area col-md-12" ref="message">
-                    <div :key="message.id" v-for="message in messages" :class="{'row' : true, 'message-out text-right justify-content-end': (message.sender_id === auth.id), 'message-in': !(message.sender_id === auth.id)}" >
+                    <div :key="message.id" v-for="message in messages" :class="{'row mt-2' : true, 'message-out text-right justify-content-end': (message.sender_id === auth.id), 'message-in': !(message.sender_id === auth.id)}" >
                         <div class="col-md-6">
-                            <p class="user">{{ message.sender.name }}</p>
                             <div class="message">{{ message.message }}</div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-10">
+
+                <div class="col-md-8">
                     <input type="text" class="form-control" v-model="newMessage" />
                 </div>
                 <div class="col-md-2">
@@ -32,7 +40,6 @@
                 </div>
 
             </div>
-            <!--<private-message  :auth="auth" :receiver="this.receiver"></private-message>-->
         </div>
     </div>
 </template>
@@ -50,22 +57,24 @@
                 receiver : null,
                 newMessage: null,
                 messages: [],
-                isActive: false
+                isActive: null,
             };
         },
         created(){
             this.getUsers();
+            window.Echo.join(`user.activity`)
+                .here(onlineUsers => {
+                    this.onlineUsers = onlineUsers;
+                })
+                .joining(onlineUser => {
+                    this.onlineUsers.push(onlineUser);
+                })
+                .leaving(onlineUser => {
+                    this.onlineUsers.splice(this.onlineUsers.findIndex(e => e.id === onlineUser.id),1);
+            });
         },
         mounted(){
-            window.Echo.channel(`user.activity`).listen('UsersActivity', (e) => {
-                let user_row = document.getElementById('user-' + e.user_id);
-                if (user_row){
-                    let status_row = user_row.getElementsByClassName('status')[0];
-                    status_row.lastChild.textContent = "Online";
-                    user_row.getElementsByTagName('i')[0].classList.remove('offline');
-                    user_row.getElementsByTagName('i')[0].classList.add('online');
-                }
-            });
+
         },
         methods: {
             getUsers(){
@@ -87,12 +96,10 @@
                         this.chat_id = this.chat.id;
                         this.messages = response.data.messages;
                         this.receiver = response.data.receiver;
-                        this.messageSent();
+                        this.messageSentEvent();
                     }).catch(error => {
                 });
-                this.isActive = true;
-
-
+                this.isActive = user_id;
             },
 
             sendMessage(){
@@ -114,35 +121,12 @@
                 this.newMessage = '';
             },
 
-            messageSent(){
-                window.Echo.private(`message.sent.` + this.chat.id).listen('MessageSent', (e) => {
+            messageSentEvent(){
+                window.Echo.private(`message.sent.${this.chat.id}`).listen('MessageSent', (e) => {
                     this.messages.push(e.message);
                 });
             },
-
-            listen() {
-                window.Echo.join(`private.chat`)
-                    .here(users => {
-                        this.friends.forEach(friend => {
-                            users.forEach(user => {
-                                if (user.id == friend.id) {
-                                    friend.online = true;
-                                }
-                            });
-                        });
-                    })
-                    .joining(user => {
-                        this.friends.forEach(
-                            friend => (user.id == friend.id ? (friend.online = true) : "")
-                        );
-                    })
-                    .leaving(user => {
-                        this.friends.forEach(
-                            friend => (user.id == friend.id ? (friend.online = false) : "")
-                        );
-                    });
-            }
-        }
+        },
     }
 </script>
 
@@ -155,9 +139,6 @@
         border-bottom: 1px solid #eee;
     }
 
-    .user {
-        font-weight: 800;
-    }
     .message {
         margin-bottom: 0;
         white-space: pre-wrap;
@@ -173,13 +154,4 @@
         color: #fff;
     }
 
-    .text-right {
-        text-align: right;
-    }
-
-
-    .self {
-        background-color: #f0f0f0;
-        padding: 10px;
-    }
 </style>

@@ -24,7 +24,7 @@ class SendMessageRequest extends FormRequest
     public function rules()
     {
         return [
-            'receiver_id' => 'required',
+            'receiver_id' => 'required|exists:users,id',
             'message'     => 'required'
         ];
     }

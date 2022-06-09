@@ -23,7 +23,5 @@ Route::group(['middleware' => 'auth'], function (){
     Route::get('/chat', [App\Http\Controllers\ChatController::class, 'index'])->name('chat');
     Route::post('/open/chat', [App\Http\Controllers\ChatController::class, 'openChat']);
     Route::get('/get/users',[App\Http\Controllers\ChatController::class, 'getUsers']);
-    Route::post('/get/messages',[App\Http\Controllers\ChatController::class, 'getMessages']);
     Route::post('/send/message',[App\Http\Controllers\ChatController::class, 'sendMessage']);
-
 });
